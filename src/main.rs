@@ -1,10 +1,27 @@
-use candle_core::Device;
+mod model;  
+use model::bitlinear_int8::BitLinearInt8;
+use ndarray::Array2;
 
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt::init();
-    let device = Device::new_cuda(0).unwrap_or(Device::cpu());
-    println!("🚀 bitnet-int8-rs started on {device}");
-    println!("Goal: true end-to-end int8 activations for BitNet b1.58 (no FP16 buffers)");
-    Ok(())
+fn main() {
+    println!("BitNet b1.58 — True Zero-Multiply Kernel");
+
+    let weights = Array2::from_shape_vec(
+        (4, 4),
+        vec![
+            -1, 0, 1, -1,
+             1, -1, 0,  1,
+             0,  1, -1, 0,
+             1,  0, -1, 1,
+        ],
+    ).unwrap();
+
+    let layer = BitLinearInt8::new(weights, 0); // no shift = scale 1.0
+
+    let x = Array2::from_shape_vec((1, 4), vec![127, 127, 127, 127]).unwrap();
+
+    let out = layer.forward(x.view());
+
+    println!("Weights:\n{}", layer.weights());
+    println!("Input (int8):\n{}", x);
+    println!("Output (int8):\n{}", out);
 }

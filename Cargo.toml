@@ -1,6 +1,16 @@
 [package]
 name = "bitnet-int8-rs"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
+description = "True zero-float, zero-multiply BitNet b1.58 in pure Rust"
+license = "MIT"
+repository = "https://github.com/kksante/bitnet-int8-rs"
+keywords = ["bitnet", "llm", "quantization", "integer"]
+categories = ["science", "algorithms"]
 
 [dependencies]
+ndarray = "0.16"
+
+[profile.release]
+opt-level = 3
+lto = true
