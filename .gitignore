@@ -1,1 +1,9 @@
 /target
+
+# NEVER commit lockfile
+/Cargo.lock
+
+# Keep Cargo.toml
+!Cargo.toml
+
+

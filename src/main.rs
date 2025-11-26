@@ -1,7 +1,8 @@
 mod model;  
 use model::bitlinear_int8::BitLinearInt8;
 use model::rmsnorm::RMSNorm;
-use ndarray::{Array1, Array2};
+use ndarray::{array, Array1, Array2};
+use crate::model::softmax::IntSoftmax;
 
 
 fn main() {
@@ -40,4 +41,14 @@ fn main() {
 
     println!("Input:  {:?}", input);
     println!("RMSNorm output: {:?}", output);
+
+    // Test softmax
+    println!("\nTrue zero-float softmax test:");
+    let scores = array![[-10i8, 0, 5, 5]];
+    let softmax = IntSoftmax::unscaled();
+    let probs = softmax.forward(scores.view());
+    println!("Softmax input:  {:?}", scores);
+    println!("Softmax output: {:?}", probs);
+    println!("Sum: {}", probs.row(0).iter().map(|&x| x as u64).sum::<u64>());
+    // Expected: most weight on the two 5s, little on 0, almost none on -10
 }
