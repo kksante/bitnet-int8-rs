@@ -1,6 +1,6 @@
 // src/model/softmax.rs
 use ndarray::{Array2, ArrayView2};
-use crate::model::exp_lut::EXP_LUT_Q4;
+use crate::lut::EXP_LUT_Q4;
 
 
 const OUTPUT_MAX: u64 = 65535; // u16 max, represents probability 1.0

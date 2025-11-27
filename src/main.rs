@@ -1,8 +1,11 @@
-mod model;  
-use model::bitlinear_int8::BitLinearInt8;
-use model::rmsnorm::RMSNorm;
+use bitnet_int8_rs::model::{
+    attention::Attention,
+    bitlinear_int8::BitLinearInt8,
+    ffn::FFN,
+    rmsnorm::RMSNorm,
+    softmax::IntSoftmax,
+};
 use ndarray::{array, Array1, Array2};
-use crate::model::softmax::IntSoftmax;
 
 
 fn main() {
@@ -51,4 +54,74 @@ fn main() {
     println!("Softmax output: {:?}", probs);
     println!("Sum: {}", probs.row(0).iter().map(|&x| x as u64).sum::<u64>());
     // Expected: most weight on the two 5s, little on 0, almost none on -10
+
+    // Test attention
+    println!("\nAttention test:");
+    let n_heads = 2;
+    let head_dim = 4;
+    let _seq = 3;
+    let _dim = n_heads * head_dim; // 8
+
+    // Q, K, V: [seq, dim]
+    let q = array![
+        [64i8, 64, 0, 0,   0, 0, 64, 64],
+        [0, 0, 64, 64,     64, 64, 0, 0],
+        [32, 32, 32, 32,   32, 32, 32, 32]
+    ];
+    let k = array![
+        [64i8, 64, 0, 0,   0, 0, 64, 64],
+        [0, 0, 64, 64,     64, 64, 0, 0],
+        [32, 32, 32, 32,   32, 32, 32, 32]
+    ];
+    let v = array![
+        [100i8, 0, 0, 0,   0, 100, 0, 0],
+        [0, 100, 0, 0,     0, 0, 100, 0],
+        [0, 0, 100, 0,     0, 0, 0, 100]
+    ];
+
+    let attn = Attention::new(n_heads, head_dim);
+    let output = attn.forward(q.view(), k.view(), v.view());
+    println!("Q:\n{:?}", q);
+    println!("K:\n{:?}", k);
+    println!("V:\n{:?}", v);
+    println!("Attention output:\n{:?}", output);
+
+    // Test FFN (SwiGLU)
+    println!("\nFFN (SwiGLU) test:");
+    let _dim = 4;
+    let _hidden_dim = 8;
+
+    // Ternary weights
+    let w_gate = array![
+        [ 1i8,  0, -1,  1,  0, -1,  1,  0],
+        [-1,  1,  0, -1,  1,  0, -1,  1],
+        [ 0, -1,  1,  0, -1,  1,  0, -1],
+        [ 1,  1, -1, -1,  0,  0,  1,  1]
+    ];
+    let w_up = array![
+        [ 1i8,  1,  1,  1, -1, -1, -1, -1],
+        [ 0,  1,  0,  1,  0,  1,  0,  1],
+        [-1,  0,  1,  0, -1,  0,  1,  0],
+        [ 1, -1,  1, -1,  1, -1,  1, -1]
+    ];
+    let w_down = array![
+        [ 1i8, -1,  0,  1],
+        [ 0,  1, -1,  0],
+        [-1,  0,  1, -1],
+        [ 1,  1,  0,  0],
+        [ 0, -1,  1,  1],
+        [-1,  1,  0, -1],
+        [ 1,  0, -1,  1],
+        [ 0,  0,  1,  0]
+    ];
+
+    let ffn = FFN::new(w_gate, w_up, w_down);
+
+    let x = array![
+        [64i8, 32, -32, -64],
+        [100, 50, 0, -50]
+    ];
+    let output = ffn.forward(x.view());
+    println!("Input:\n{:?}", x);
+    println!("FFN output:\n{:?}", output);
 }
