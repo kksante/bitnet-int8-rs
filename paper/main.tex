@@ -136,7 +136,12 @@ SmoothQuant~\cite{xiao2023smoothquant} migrates scale into weights, and
 AWQ~\cite{lin2023awq} protects salient channels. Rotation-based methods
 (QuaRot~\cite{ashkboos2024quarot}) multiply activations by an orthonormal (Hadamard)
 matrix to spread outliers before quantization; we apply exactly this idea, post-hoc,
-to a native-1-bit model whose weights we leave untouched.
+to a native-1-bit model whose weights we leave untouched. A complementary
+algorithm--architecture line treats outliers as a hardware problem:
+MicroScopiQ~\cite{ramachandran2025microscopiq} keeps outliers at higher precision and
+prunes a fraction of low-importance weights to ``fund'' the extra outlier bits on a
+custom multi-precision accelerator---reaching the same conclusion from the systems
+side that outlier \emph{handling}, not raw bit-width, is the design axis.
 
 \paragraph{Concurrent work on PTQ for ternary-weight LLMs.} A concurrent line of work
 from one group (Zhao et al.)---BWLA~\cite{wang2026bwla} (May 2026) and
@@ -637,6 +642,9 @@ Post-Training Quantization for Large Language Models. ICML, 2023.
 Compression and Acceleration. arXiv:2306.00978, 2023.
 \bibitem{ashkboos2024quarot} S.~Ashkboos et al. QuaRot: Outlier-Free 4-Bit Inference
 in Rotated LLMs. NeurIPS, 2024.
+\bibitem{ramachandran2025microscopiq} A.~Ramachandran, S.~Kundu, T.~Krishna.
+MicroScopiQ: Accelerating Foundational Models through Outlier-Aware Microscaling
+Quantization. ISCA, 2025 (arXiv:2411.05282).
 \bibitem{li2026twla} Z.~Zhao et al. TWLA: Achieving Ternary Weights and Low-Bit
 Activations for LLMs via Post-Training Quantization. ICML, 2026 (arXiv:2606.13054,
 Jun.\ 2026; concurrent).
