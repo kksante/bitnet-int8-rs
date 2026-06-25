@@ -6,4 +6,36 @@
 # Keep Cargo.toml
 !Cargo.toml
 
+# Derived weight cache from reference/prepare_weights.py (large, regenerable)
+reference/_cache/
+_cache/
+
+# Model weights — download separately (see README). NEVER commit (GB-scale).
+/bitnet-b1.58-2B-4T/
+/models/
+*.gguf
+
+# Held-out corpus — regenerate via reference/wikitext_loader.py.
+# WikiText-2 is CC BY-SA; we point to the source rather than redistribute.
+/wiki.test.txt
+
+# Compiled microbenchmark binary (rebuild from bench/kernels.c)
+bench/kernels
+
+# OS / editor / mount junk
+.DS_Store
+**/.DS_Store
+/BinetInt8/
+/_ppl_wiki_full/
+
+# Python caches
+__pycache__/
+*.pyc
+
+# LaTeX build artifacts (keep main.tex and main.pdf)
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.synctex.gz
+
 

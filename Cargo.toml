@@ -1,15 +1,23 @@
 [package]
 name = "bitnet-int8-rs"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
-description = "True zero-float, zero-multiply BitNet b1.58 in pure Rust"
+autobins = false  # legacy src/bin/* are superseded; see reference/ + src/{gguf,model}.rs
+description = "Verified BitNet b1.58 2B4T inference in pure Rust (W1.58A8)"
 license = "MIT"
 repository = "https://github.com/kksante/bitnet-int8-rs"
 keywords = ["bitnet", "llm", "quantization", "integer"]
 categories = ["science", "algorithms"]
 
+# Explicit binary (autobins is off to keep any leftover legacy src/bin/* out of
+# the build); src/main.rs is the generation CLI.
+[[bin]]
+name = "bitnet-int8-rs"
+path = "src/main.rs"
+
 [dependencies]
-ndarray = "0.16"
+tokenizers = "0.15"
+rayon = "1"          # data-parallel BitLinear / lm_head over output channels
 
 [profile.release]
 opt-level = 3

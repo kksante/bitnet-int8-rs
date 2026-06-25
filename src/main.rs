@@ -1,127 +1,69 @@
-use bitnet_int8_rs::model::{
-    attention::Attention,
-    bitlinear_int8::BitLinearInt8,
-    ffn::FFN,
-    rmsnorm::RMSNorm,
-    softmax::IntSoftmax,
-};
-use ndarray::{array, Array1, Array2};
+//! BitNet b1.58 2B4T greedy generation CLI.
+//!
+//! Usage:
+//!   cargo run --release -- "The capital of France is" 20
+//!
+//! Defaults to the model in ./bitnet-b1.58-2B-4T/. This is a faithful port of
+//! the verified numpy reference (reference/), which generates
+//!   "The capital of France is" -> " Paris. Paris is a city".
 
+use std::env;
+use std::time::Instant;
+use tokenizers::Tokenizer;
+
+use bitnet_int8_rs::model::Model;
 
 fn main() {
-    println!("BitNet b1.58 — True Zero-Multiply Kernel");
+    let model_path = env::var("BITNET_MODEL")
+        .unwrap_or_else(|_| "bitnet-b1.58-2B-4T/ggml-model-i2_s.gguf".to_string());
+    let tok_path = env::var("BITNET_TOKENIZER")
+        .unwrap_or_else(|_| "bitnet-b1.58-2B-4T/tokenizer.json".to_string());
 
-    let weights = Array2::from_shape_vec(
-        (4, 4),
-        vec![
-            -1, 0, 1, -1,
-             1, -1, 0,  1,
-             0,  1, -1, 0,
-             1,  0, -1, 1,
-        ],
-    ).unwrap();
+    let args: Vec<String> = env::args().collect();
+    let prompt = args.get(1).cloned().unwrap_or_else(|| "The capital of France is".to_string());
+    let n_new: usize = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(20);
 
-    let layer = BitLinearInt8::new(weights, 0); // no shift = scale 1.0
+    eprintln!("loading tokenizer {tok_path}");
+    let tok = Tokenizer::from_file(&tok_path).expect("load tokenizer.json");
+    eprintln!("loading model {model_path}");
+    let t0 = Instant::now();
+    let mut model = Model::load(&model_path).expect("load model");
+    eprintln!("loaded in {:.1?}", t0.elapsed());
 
-    let x = Array2::from_shape_vec((1, 4), vec![127, 127, 127, 127]).unwrap();
+    // prepend BOS, like the reference
+    let enc = tok.encode(prompt.as_str(), false).expect("encode");
+    let mut ids: Vec<u32> = vec![model.cfg.bos];
+    ids.extend(enc.get_ids().iter().copied());
 
-    let out = layer.forward(x.view());
+    print!("{prompt}");
+    let t0 = Instant::now();
+    let mut logits = vec![];
+    for &t in &ids {
+        logits = model.forward(t as usize);
+    }
+    let mut produced = 0usize;
+    for _ in 0..n_new {
+        let next = argmax(&logits) as u32;
+        if next == model.cfg.eos { break; }
+        let piece = tok.decode(&[next], false).unwrap_or_default();
+        print!("{piece}");
+        use std::io::Write;
+        std::io::stdout().flush().ok();
+        produced += 1;
+        logits = model.forward(next as usize);
+    }
+    let dt = t0.elapsed();
+    eprintln!(
+        "\n[{} tokens in {:.1?}, {:.2} tok/s]",
+        produced, dt, produced as f64 / dt.as_secs_f64()
+    );
+}
 
-    println!("Weights:\n{}", layer.weights());
-    println!("Input (int8):\n{}", x);
-    println!("Output (int8):\n{}", out);
-
-    println!("\nTrue zero-float RMSNorm test:");
-
-    // Pre-quantized weight (1.0, 1.0, 1.0, 1.0) in Q0.16 → 65536
-    let weight_q16 = Array1::from_vec(vec![65536i32; 4]);
-
-    // eps = 1e-5 → Q32 = 429
-    let norm = RMSNorm::from_quantized(weight_q16, 429);
-
-    let input = Array2::from_shape_vec((1, 4), vec![-127i8, -50i8, 0i8, 127i8]).unwrap();
-    let output = norm.forward(input.view());
-
-    println!("Input:  {:?}", input);
-    println!("RMSNorm output: {:?}", output);
-
-    // Test softmax
-    println!("\nTrue zero-float softmax test:");
-    let scores = array![[-10i8, 0, 5, 5]];
-    let softmax = IntSoftmax::unscaled();
-    let probs = softmax.forward(scores.view());
-    println!("Softmax input:  {:?}", scores);
-    println!("Softmax output: {:?}", probs);
-    println!("Sum: {}", probs.row(0).iter().map(|&x| x as u64).sum::<u64>());
-    // Expected: most weight on the two 5s, little on 0, almost none on -10
-
-    // Test attention
-    println!("\nAttention test:");
-    let n_heads = 2;
-    let head_dim = 4;
-    let _seq = 3;
-    let _dim = n_heads * head_dim; // 8
-
-    // Q, K, V: [seq, dim]
-    let q = array![
-        [64i8, 64, 0, 0,   0, 0, 64, 64],
-        [0, 0, 64, 64,     64, 64, 0, 0],
-        [32, 32, 32, 32,   32, 32, 32, 32]
-    ];
-    let k = array![
-        [64i8, 64, 0, 0,   0, 0, 64, 64],
-        [0, 0, 64, 64,     64, 64, 0, 0],
-        [32, 32, 32, 32,   32, 32, 32, 32]
-    ];
-    let v = array![
-        [100i8, 0, 0, 0,   0, 100, 0, 0],
-        [0, 100, 0, 0,     0, 0, 100, 0],
-        [0, 0, 100, 0,     0, 0, 0, 100]
-    ];
-
-    let attn = Attention::new(n_heads, head_dim);
-    let output = attn.forward(q.view(), k.view(), v.view());
-    println!("Q:\n{:?}", q);
-    println!("K:\n{:?}", k);
-    println!("V:\n{:?}", v);
-    println!("Attention output:\n{:?}", output);
-
-    // Test FFN (SwiGLU)
-    println!("\nFFN (SwiGLU) test:");
-    let _dim = 4;
-    let _hidden_dim = 8;
-
-    // Ternary weights
-    let w_gate = array![
-        [ 1i8,  0, -1,  1,  0, -1,  1,  0],
-        [-1,  1,  0, -1,  1,  0, -1,  1],
-        [ 0, -1,  1,  0, -1,  1,  0, -1],
-        [ 1,  1, -1, -1,  0,  0,  1,  1]
-    ];
-    let w_up = array![
-        [ 1i8,  1,  1,  1, -1, -1, -1, -1],
-        [ 0,  1,  0,  1,  0,  1,  0,  1],
-        [-1,  0,  1,  0, -1,  0,  1,  0],
-        [ 1, -1,  1, -1,  1, -1,  1, -1]
-    ];
-    let w_down = array![
-        [ 1i8, -1,  0,  1],
-        [ 0,  1, -1,  0],
-        [-1,  0,  1, -1],
-        [ 1,  1,  0,  0],
-        [ 0, -1,  1,  1],
-        [-1,  1,  0, -1],
-        [ 1,  0, -1,  1],
-        [ 0,  0,  1,  0]
-    ];
-
-    let ffn = FFN::new(w_gate, w_up, w_down);
-
-    let x = array![
-        [64i8, 32, -32, -64],
-        [100, 50, 0, -50]
-    ];
-    let output = ffn.forward(x.view());
-    println!("Input:\n{:?}", x);
-    println!("FFN output:\n{:?}", output);
+fn argmax(v: &[f32]) -> usize {
+    let mut bi = 0usize;
+    let mut bv = f32::NEG_INFINITY;
+    for (i, &x) in v.iter().enumerate() {
+        if x > bv { bv = x; bi = i; }
+    }
+    bi
 }

@@ -1,0 +1,23 @@
+\begin{table}[t]\centering\small
+\caption{Cross-architecture generalization \emph{on WikiText-2} ($\Delta$PPL vs each
+model's reference). The same failure surface holds across two architectures built by
+different groups: int8 KV is free; 2-bit per-vector \emph{and} per-channel-symmetric
+KV both collapse; only per-channel-\emph{asymmetric} rescues 2-bit; robust activation
+scaling is catastrophic; and the Key per-channel bias is the same $0.79\sigma$ in
+both. (BitNet on a 10k-token set, Falcon3-1B on a 1k-token set; see Table~\ref{tab:registry}.)}
+\label{tab:crossmodel}
+\begin{tabular}{lcc}
+\toprule
+& BitNet b1.58 2B4T & Falcon3-1B-1.58\\
+2-bit KV / activation config & (ref $27.4$) & (ref $64.2$)\\
+\midrule
+int8 KV (per-vector) & $+0.01$ & $-0.27$\\
+2-bit KV, per-vector & $+265.7$ & $+104.5$\\
+2-bit KV, per-channel (sym) & $+264.0$ & $+107.7$\\
+2-bit KV, per-channel (asym) & $\mathbf{+10.0}$ & $\mathbf{+18.5}$\\
+absmean activation scale & $+1.7{\times}10^5$ & $+4.2{\times}10^3$\\
+\midrule
+Key per-channel bias $|\mu_c|/\sigma_c$ & $0.79$ & $0.79$\\
+\bottomrule
+\end{tabular}
+\end{table}

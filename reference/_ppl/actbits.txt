@@ -1,0 +1,6 @@
+act 8-bit: naive ppl=      8.184   rotated ppl=      8.265   (21.9s)
+act 6-bit: naive ppl=      8.856   rotated ppl=      8.154   (21.9s)
+act 4-bit: naive ppl=     12.308   rotated ppl=      9.313   (21.9s)
+act 3-bit: naive ppl=   1877.205   rotated ppl=     14.090   (22.0s)
+act 2-bit: naive ppl=31690239.213   rotated ppl=1041526.595   (22.0s)
+act 1-bit: naive ppl=1305828.975   rotated ppl= 297016.402   (21.9s)

@@ -1,0 +1,22 @@
+\begin{table}[t]\centering\small
+\caption{Integer-path KV-cache perplexity on WikiText-2 test (10{,}240 tokens). Int8
+KV is free (CI spans 0); 2-bit \emph{per-vector and per-channel-symmetric both
+collapse} ($+264$--$266$), and only the \emph{asymmetric} per-channel code rescues
+2-bit ($+10$)---so at this corpus size granularity alone is not enough, the
+zero-point is decisive. Robust activation scaling is catastrophic.}
+\label{tab:wiki}
+\begin{tabular}{lccc}
+\toprule
+Configuration & PPL & $\Delta$PPL & 95\% CI on $\Delta$PPL\\
+\midrule
+reference (absmax, KV float) & 27.4 & $+0.00$ & $[+0.00,\,+0.00]$\\
+per-vector 8-bit & 27.4 & $+0.01$ & $[-0.04,\,+0.05]$\\
+per-vector 2-bit (sym) & 293.2 & $+265.7$ & $[+247.9,\,+283.7]$\\
+per-channel 2-bit (sym) & 291.5 & $+264.0$ & $[+246.2,\,+282.7]$\\
+per-channel 2-bit (asym) & 37.4 & $\mathbf{+9.96}$ & $[+9.11,\,+10.87]$\\
+\quad + pre-RoPE Keys & 35.6 & $+8.17$ & $[+7.43,\,+8.98]$\\
+absmean activation scale & 1.7e5 & $+171080$ & $[+157977,\,+185339]$\\
+\bottomrule
+\end{tabular}
+\\[2pt]{\footnotesize 10{,}240 tokens; paired token-level bootstrap, 2000 resamples.}
+\end{table}

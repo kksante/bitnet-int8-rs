@@ -1,0 +1,19 @@
+\begin{table}[t]\centering\small
+\caption{2-bit KV-cache ablation, $\Delta$PPL on two corpora. The robust result is
+the conjunction: only per-channel \emph{and} asymmetric holds on both. Which factor
+helps \emph{alone} flips with corpus size---per-channel-symmetric helps on the
+mini-corpus but collapses on WikiText-2; per-vector-asymmetric hurts on the
+mini-corpus but helps on WikiText-2.}
+\label{tab:ablation}
+\begin{tabular}{lcc}
+\toprule
+2-bit KV configuration & mini-corpus (387 tok) & WikiText-2 (10k)\\
+\midrule
+per-vector, symmetric & $+86.9$ & $+265.7$\\
+per-vector, asymmetric & $+175.1$ & $+124.6$\\
+per-channel, symmetric & $+11.0$ & $+264.0$\\
+per-channel, asymmetric & $\mathbf{+0.9}$ & $\mathbf{+10.0}$\\
+\bottomrule
+\end{tabular}
+\\[2pt]{\footnotesize paired token-level bootstrap, 2000 resamples.}
+\end{table}

@@ -1,0 +1,6 @@
+act4b rot              ppl=       5.942  dPPL=+0.366
+act4b rot+g32          ppl=       5.646  dPPL=+0.070
+act3b rot              ppl=       9.087  dPPL=+3.511
+act3b rot+g32          ppl=       6.029  dPPL=+0.453
+act2b rot+g32          ppl=    1465.339  dPPL=+1459.763
+act2b rot+g16+keep64   ppl=     119.418  dPPL=+113.842
